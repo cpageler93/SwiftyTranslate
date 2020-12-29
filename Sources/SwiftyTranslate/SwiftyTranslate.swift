@@ -52,25 +52,41 @@ public struct SwiftyTranslate {
                 return
             }
 
-            // extract arrays
+            // extract array structure
             guard let firstArray = object as? [Any],
-                  let secondArray = firstArray.first as? [Any],
-                  let thirdArray = secondArray.first as? [Any]
+                  let secondArray = firstArray.first as? [Any]
             else {
                 completion(.failure(.invalidData))
                 return
             }
 
             // extract result
-            let result = thirdArray[0..<2]
-            guard let translated = result.first as? String,
-                  let origin = result.last as? String
-            else {
-                completion(.failure(.invalidData))
-                return
+            // strings seperated by \n are seperated in the array
+            var originParts: [String]?
+            var resultParts: [String]?
+            for sectionInSecondArray in secondArray {
+                guard let sectionResultArray = sectionInSecondArray as? [Any] else { continue }
+                let sectionResult = sectionResultArray[0..<2]
+                guard let translated = sectionResult.first as? String,
+                      let origin = sectionResult.last as? String
+                else {
+                    continue
+                }
+
+                if originParts == nil { originParts = [] }
+                originParts?.append(origin)
+                if resultParts == nil { resultParts = [] }
+                resultParts?.append(translated)
             }
 
-            completion(.success(Translation(origin: origin, translated: translated)))
+            // (re)join seperated strings
+            if let originParts = originParts, let resultParts = resultParts {
+                let origin = originParts.joined()
+                let translated = resultParts.joined()
+                completion(.success(Translation(origin: origin, translated: translated)))
+            } else {
+                completion(.failure(.invalidData))
+            }
         }.resume()
     }
 
