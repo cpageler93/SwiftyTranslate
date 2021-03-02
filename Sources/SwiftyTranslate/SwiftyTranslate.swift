@@ -15,6 +15,7 @@ public struct SwiftyTranslate {
 
         case invalidURL
         case noData
+        case tooManyRequests
         case invalidData
 
     }
@@ -43,8 +44,12 @@ public struct SwiftyTranslate {
 
         URLSession.shared.dataTask(with: URLRequest(url: url))
         { (data, response, error) in
-            guard let data = data else {
+            guard let data = data, let httpResponse = response as? HTTPURLResponse else {
                 completion(.failure(.noData))
+                return
+            }
+            guard httpResponse.statusCode != 429 else {
+                completion(.failure(.tooManyRequests))
                 return
             }
             guard let object = try? JSONSerialization.jsonObject(with: data, options: []) else {
