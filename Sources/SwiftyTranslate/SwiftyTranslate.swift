@@ -7,7 +7,9 @@
 
 
 import Foundation
-
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public struct SwiftyTranslate {
 
@@ -96,3 +98,24 @@ public struct SwiftyTranslate {
     }
 
 }
+
+#if swift(>=5.5)
+@available(iOS 13.0.0, *)
+@available(macOS 10.15.0, *)
+@available(watchOS 6.0, *)
+@available(tvOS 13.0.0, *)
+extension SwiftyTranslate {
+    public static func translate(text: String, from: String, to: String) async throws -> Translation {
+        try await withCheckedThrowingContinuation({ continuation in
+            SwiftyTranslate.translate(text: text, from: from, to: to) { result in
+                switch result {
+                case .success(let value):
+                    continuation.resume(returning: value)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        })
+    }
+}
+#endif
